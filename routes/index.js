@@ -8,6 +8,6 @@ const testimonialRoutes = require('../controllers/testimonial');
 
 router.use('/contacts', contactRoutes);
 router.use('/slider',upload.single('image'), sliderRoutes);
-router.use('/client',upload.single('image'), testimonialRoutes);
+router.use('/testimonial',upload.single('image'), testimonialRoutes);
 
 module.exports = router;
