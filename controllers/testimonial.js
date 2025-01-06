@@ -2,6 +2,9 @@ const express = require('express');
 const testimonialRouter = express.Router();
 const Testimonial = require('../model/testimonial');
 const { uploadFile } = require('../services/uploadFile');
+const multer = require('multer');
+const storage = multer.memoryStorage();
+const upload = multer({storage: storage});
 
 
 
@@ -35,7 +38,7 @@ testimonialRouter.get('/:id', async (req, res) => {
 
 
 
-testimonialRouter.post('/', async (req, res) => {
+testimonialRouter.post('/',upload.single('image'), async (req, res) => {
     try {
         const { name, role, description } = req.body;
         const { file } = req;
@@ -63,7 +66,7 @@ testimonialRouter.post('/', async (req, res) => {
 
 
 
-testimonialRouter.put('/:id', async (req, res) => {
+testimonialRouter.put('/:id',upload.single('image'), async (req, res) => {
     try {
         const { id } = req.params;
         const { name, role, description } = req.body;

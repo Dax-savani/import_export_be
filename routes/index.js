@@ -1,13 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const upload = require('../services/multerConfig');
+
 
 const contactRoutes = require('../controllers/contact');
 const sliderRoutes = require('../controllers/slider');
 const testimonialRoutes = require('../controllers/testimonial');
+const productsRoutes = require('../controllers/product');
 
 router.use('/contacts', contactRoutes);
-router.use('/slider',upload.single('image'), sliderRoutes);
-router.use('/testimonial',upload.single('image'), testimonialRoutes);
+router.use('/slider', sliderRoutes);
+router.use('/testimonial', testimonialRoutes);
+router.use('/product', productsRoutes);
 
 module.exports = router;

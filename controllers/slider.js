@@ -2,6 +2,9 @@ const express = require('express');
 const sliderRouter = express.Router();
 const Slider = require('../model/slider');
 const { uploadFile } = require('../services/uploadFile');
+const multer = require('multer');
+const storage = multer.memoryStorage();
+const upload = multer({storage: storage});
 
 sliderRouter.get('/', async (req, res) => {
     try {
@@ -29,7 +32,7 @@ sliderRouter.get('/:id', async (req, res) => {
     }
 });
 
-sliderRouter.post('/', async (req, res) => {
+sliderRouter.post('/', upload.single('image'),async (req, res) => {
     try {
         const { title } = req.body;
         const { file } = req;
@@ -54,7 +57,7 @@ sliderRouter.post('/', async (req, res) => {
 
 // @desc Update a slider by ID
 // @route PUT /slider/:id
-sliderRouter.put('/:id', async (req, res) => {
+sliderRouter.put('/:id',upload.single('image'), async (req, res) => {
     try {
         const { id } = req.params;
         const { title } = req.body;
