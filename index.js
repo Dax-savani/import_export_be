@@ -5,12 +5,10 @@ require('dotenv').config();
 
 const app = express();
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Import and use routes
 const routes = require('./routes/index');
 app.use('/api', routes);
 
@@ -25,7 +23,6 @@ const connectDB = async () => {
     }
 };
 
-// Start server
 const PORT = process.env.PORT || 5000;
 
 connectDB().then(() => {
