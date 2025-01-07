@@ -43,8 +43,8 @@ productRouter.post('/', upload.fields([
         const { title, subtitle, other_info, productCategory, isMainProduct } = req.body;
         const files = req.files;
 
-        if (!files || !files.image || (!files.backgroundImage && isMainProduct)) {
-            return res.status(400).json({ message: 'Both image and background image files are required' });
+        if (!files || !files.image) {
+            return res.status(400).json({ message: 'Image is required' });
         }
         const imageUrl = await uploadFile(files.image[0].buffer);
         const backgroundImageUrl = await uploadFile(files.backgroundImage[0].buffer);
