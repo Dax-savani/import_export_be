@@ -4,14 +4,20 @@ const Product = require('../model/product');
 const multer = require('multer');
 const { uploadFile } = require('../services/uploadFile');
 
-// Memory storage for file uploads
+
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-// Fetch all products with category populated
 productRouter.get('/', async (req, res) => {
     try {
-        const products = await Product.find().populate('category'); // Populate category field
+        const { category } = req.query;
+
+        let filter = {};
+        if (category) {
+            filter.category = category;
+        }
+
+        const products = await Product.find(filter).populate('category');
         res.status(200).json(products);
     } catch (error) {
         console.error('Error fetching products:', error.message);
@@ -19,11 +25,11 @@ productRouter.get('/', async (req, res) => {
     }
 });
 
-// Fetch a single product by ID with category populated
+
 productRouter.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const product = await Product.findById(id).populate('category'); // Populate category field
+        const product = await Product.findById(id).populate('category');
 
         if (!product) {
             return res.status(404).json({ message: 'Product not found' });
@@ -36,7 +42,7 @@ productRouter.get('/:id', async (req, res) => {
     }
 });
 
-// Create a new product
+
 productRouter.post('/', upload.fields([
     { name: 'image', maxCount: 1 },
     { name: 'backgroundImage', maxCount: 1 }
@@ -70,7 +76,7 @@ productRouter.post('/', upload.fields([
     }
 });
 
-// Update an existing product
+
 productRouter.put('/:id', upload.fields([
     { name: 'image', maxCount: 1 },
     { name: 'backgroundImage', maxCount: 1 }
@@ -116,7 +122,7 @@ productRouter.put('/:id', upload.fields([
     }
 });
 
-// Delete a product
+
 productRouter.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
