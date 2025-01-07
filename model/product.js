@@ -27,7 +27,7 @@ const productSchema = new mongoose.Schema(
         },
         backgroundImage: {
             type: String,
-            required: true,
+            required: false,
         },
         isMainProduct: {
             type: Boolean,
