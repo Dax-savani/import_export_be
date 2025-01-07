@@ -1,15 +1,17 @@
 const express = require('express');
 const productRouter = express.Router();
-const Product = require('../model/product');
-const { uploadFile } = require('../services/uploadFile');
+const Product = require('../models/product');
 const multer = require('multer');
+const { uploadFile } = require('../services/uploadFile');
+
+// Memory storage for file uploads
 const storage = multer.memoryStorage();
-const upload = multer({storage: storage});
+const upload = multer({ storage: storage });
 
-
+// Fetch all products with category populated
 productRouter.get('/', async (req, res) => {
     try {
-        const products = await Product.find();
+        const products = await Product.find().populate('category'); // Populate category field
         res.status(200).json(products);
     } catch (error) {
         console.error('Error fetching products:', error.message);
@@ -17,11 +19,11 @@ productRouter.get('/', async (req, res) => {
     }
 });
 
-
+// Fetch a single product by ID with category populated
 productRouter.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const product = await Product.findById(id);
+        const product = await Product.findById(id).populate('category'); // Populate category field
 
         if (!product) {
             return res.status(404).json({ message: 'Product not found' });
@@ -34,26 +36,27 @@ productRouter.get('/:id', async (req, res) => {
     }
 });
 
-
+// Create a new product
 productRouter.post('/', upload.fields([
     { name: 'image', maxCount: 1 },
     { name: 'backgroundImage', maxCount: 1 }
 ]), async (req, res) => {
     try {
-        const { title, subtitle, other_info, productCategory, isMainProduct } = req.body;
+        const { title, subtitle, other_info, category, isMainProduct } = req.body;
         const files = req.files;
 
         if (!files || !files.image) {
             return res.status(400).json({ message: 'Image is required' });
         }
+
         const imageUrl = await uploadFile(files.image[0].buffer);
-        const backgroundImageUrl = await uploadFile(files.backgroundImage[0].buffer);
+        const backgroundImageUrl = files.backgroundImage ? await uploadFile(files.backgroundImage[0].buffer) : null;
 
         const newProduct = new Product({
             title,
             subtitle,
             other_info: JSON.parse(other_info),
-            productCategory,
+            category,
             image: imageUrl,
             backgroundImage: backgroundImageUrl,
             isMainProduct: isMainProduct || false,
@@ -67,24 +70,24 @@ productRouter.post('/', upload.fields([
     }
 });
 
-
-
+// Update an existing product
 productRouter.put('/:id', upload.fields([
     { name: 'image', maxCount: 1 },
     { name: 'backgroundImage', maxCount: 1 }
 ]), async (req, res) => {
     try {
         const { id } = req.params;
-        const { title, subtitle, other_info, productCategory, isMainProduct } = req.body;
+        const { title, subtitle, other_info, category, isMainProduct } = req.body;
         const files = req.files;
 
         let updateData = {
             title,
             subtitle,
             other_info: JSON.parse(other_info),
-            productCategory,
+            category,
             isMainProduct,
         };
+
         if (files) {
             if (files.image && files.image.length > 0) {
                 const imageUrl = await uploadFile(files.image[0].buffer);
@@ -113,8 +116,7 @@ productRouter.put('/:id', upload.fields([
     }
 });
 
-
-
+// Delete a product
 productRouter.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
