@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-// Define the Category schema
+
 const categorySchema = new mongoose.Schema(
     {
         name: {
@@ -8,6 +8,10 @@ const categorySchema = new mongoose.Schema(
             required: [true, 'Category name is required'],
             unique: true,
             trim: true,
+        },
+        image: {
+            type: String,
+            required: [true, 'Image is required'],
         },
     },
     {
