@@ -48,7 +48,7 @@ productRouter.post('/', upload.fields([
     { name: 'backgroundImage', maxCount: 1 }
 ]), async (req, res) => {
     try {
-        const { title, subtitle, other_info, category, isMainProduct } = req.body;
+        const { title, subtitle, other_info, category } = req.body;
         const files = req.files;
 
         if (!files || !files.image) {
@@ -65,7 +65,6 @@ productRouter.post('/', upload.fields([
             category,
             image: imageUrl,
             backgroundImage: backgroundImageUrl,
-            isMainProduct: isMainProduct || false,
         });
 
         const savedProduct = await newProduct.save();
@@ -83,7 +82,7 @@ productRouter.put('/:id', upload.fields([
 ]), async (req, res) => {
     try {
         const { id } = req.params;
-        const { title, subtitle, other_info, category, isMainProduct } = req.body;
+        const { title, subtitle, other_info, category } = req.body;
         const files = req.files;
 
         let updateData = {
@@ -91,7 +90,6 @@ productRouter.put('/:id', upload.fields([
             subtitle,
             other_info: JSON.parse(other_info),
             category,
-            isMainProduct,
         };
 
         if (files) {

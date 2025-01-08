@@ -13,6 +13,14 @@ const categorySchema = new mongoose.Schema(
             type: String,
             required: [true, 'Image is required'],
         },
+        backgroundImage: {
+            type: String,
+            required: false
+        },
+        isMainProduct: {
+            type: Boolean,
+            default: false,
+        },
     },
     {
         timestamps: true,

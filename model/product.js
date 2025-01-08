@@ -29,10 +29,6 @@ const productSchema = new mongoose.Schema(
             type: String,
             required: false,
         },
-        isMainProduct: {
-            type: Boolean,
-            default: false,
-        },
     },
     {
         timestamps: true,
