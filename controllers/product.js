@@ -80,19 +80,30 @@ productRouter.post(
 
 productRouter.put(
     '/:id',
-    upload.array('image', 10), // Accept up to 10 images
+    upload.array('image', 10),
     async (req, res) => {
         try {
             const { id } = req.params;
             const { title, subtitle, other_info, category } = req.body;
             const files = req.files;
 
+            const parsedOtherInfo = other_info ? JSON.parse(other_info) : undefined;
+
+            let uploadedImages = [];
+
+            if (req.body.image) {
+                if (Array.isArray(req.body.image)) {
+                    uploadedImages = [...req.body.image];
+                } else {
+                    uploadedImages.push(req.body.image);
+                }
+            }
+
             const existingProduct = await Product.findById(id);
             if (!existingProduct) {
                 return res.status(404).json({ message: 'Product not found' });
             }
 
-            let uploadedImages = [];
             if (files && files.length > 0) {
                 for (const file of files) {
                     if (file.path && file.path.startsWith("http")) {
@@ -113,7 +124,7 @@ productRouter.put(
             const updateData = {
                 title,
                 subtitle,
-                other_info: other_info ? JSON.parse(other_info) : existingProduct.other_info,
+                other_info: parsedOtherInfo || existingProduct.other_info,
                 category,
                 image: imagesToUpdate,
             };
