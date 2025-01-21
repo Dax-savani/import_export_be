@@ -45,26 +45,19 @@ productRouter.get('/:id', async (req, res) => {
 
 productRouter.post(
     '/',
-    upload.fields([
-        { name: 'image', maxCount: 10 },
-        { name: 'backgroundImage', maxCount: 1 },
-    ]),
+    upload.array('image', 10),
     async (req, res) => {
         try {
             const { title, subtitle, other_info, category } = req.body;
             const files = req.files;
 
-            if (!files || !files.image) {
+            if (!files || files.length === 0) {
                 return res.status(400).json({ message: 'At least one image is required' });
             }
 
             const imageUrls = await Promise.all(
-                files.image.map(file => uploadFile(file.buffer))
+                files.map(file => uploadFile(file.buffer))
             );
-
-            const backgroundImageUrl = files.backgroundImage
-                ? await uploadFile(files.backgroundImage[0].buffer)
-                : null;
 
             const newProduct = new Product({
                 title,
@@ -72,7 +65,6 @@ productRouter.post(
                 other_info: JSON.parse(other_info),
                 category,
                 image: imageUrls,
-                backgroundImage: backgroundImageUrl,
             });
 
             const savedProduct = await newProduct.save();
@@ -88,10 +80,7 @@ productRouter.post(
 
 productRouter.put(
     '/:id',
-    upload.fields([
-        { name: 'image', maxCount: 10 },
-        { name: 'backgroundImage', maxCount: 1 },
-    ]),
+    upload.array('image', 10), // Accept up to 10 images
     async (req, res) => {
         try {
             const { id } = req.params;
@@ -102,10 +91,11 @@ productRouter.put(
             if (!existingProduct) {
                 return res.status(404).json({ message: 'Product not found' });
             }
+
             let uploadedImages = [];
-            if (files && files.image && files.image.length > 0) {
-                for (const file of files.image) {
-                    if (file.path && file.path.startsWith('http')) {
+            if (files && files.length > 0) {
+                for (const file of files) {
+                    if (file.path && file.path.startsWith("http")) {
                         uploadedImages.push(file.path);
                     } else if (file.buffer) {
                         const url = await uploadFile(file.buffer);
@@ -113,22 +103,19 @@ productRouter.put(
                             uploadedImages.push(url);
                         }
                     } else {
-                        console.warn('File structure not as expected:', file);
+                        console.warn("File structure not as expected:", file);
                     }
                 }
             }
+
             const imagesToUpdate = uploadedImages.length > 0 ? uploadedImages : existingProduct.image;
-            let backgroundImage = existingProduct.backgroundImage || null;
-            if (files && files.backgroundImage && files.backgroundImage.length > 0) {
-                backgroundImage = await uploadFile(files.backgroundImage[0].buffer);
-            }
+
             const updateData = {
                 title,
                 subtitle,
                 other_info: other_info ? JSON.parse(other_info) : existingProduct.other_info,
                 category,
                 image: imagesToUpdate,
-                backgroundImage,
             };
 
             const updatedProduct = await Product.findByIdAndUpdate(id, updateData, {
