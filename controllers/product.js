@@ -43,82 +43,119 @@ productRouter.get('/:id', async (req, res) => {
 });
 
 
-productRouter.post('/', upload.fields([
-    { name: 'image', maxCount: 1 },
-    { name: 'backgroundImage', maxCount: 1 }
-]), async (req, res) => {
-    try {
-        const { title, subtitle, other_info, category } = req.body;
-        const files = req.files;
+productRouter.post(
+    '/',
+    upload.fields([
+        { name: 'image', maxCount: 10 },
+        { name: 'backgroundImage', maxCount: 1 },
+    ]),
+    async (req, res) => {
+        try {
+            const { title, subtitle, other_info, category } = req.body;
+            const files = req.files;
 
-        if (!files || !files.image) {
-            return res.status(400).json({ message: 'Image is required' });
-        }
-
-        const imageUrl = await uploadFile(files.image[0].buffer);
-        const backgroundImageUrl = files.backgroundImage ? await uploadFile(files.backgroundImage[0].buffer) : null;
-
-        const newProduct = new Product({
-            title,
-            subtitle,
-            other_info: JSON.parse(other_info),
-            category,
-            image: imageUrl,
-            backgroundImage: backgroundImageUrl,
-        });
-
-        const savedProduct = await newProduct.save();
-        res.status(201).json(savedProduct);
-    } catch (error) {
-        console.error('Error creating product:', error.message);
-        res.status(500).json({ message: 'Failed to create product', error: error.message });
-    }
-});
-
-
-productRouter.put('/:id', upload.fields([
-    { name: 'image', maxCount: 1 },
-    { name: 'backgroundImage', maxCount: 1 }
-]), async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { title, subtitle, other_info, category } = req.body;
-        const files = req.files;
-
-        let updateData = {
-            title,
-            subtitle,
-            other_info: JSON.parse(other_info),
-            category,
-        };
-
-        if (files) {
-            if (files.image && files.image.length > 0) {
-                const imageUrl = await uploadFile(files.image[0].buffer);
-                updateData.image = imageUrl;
+            if (!files || !files.image) {
+                return res.status(400).json({ message: 'At least one image is required' });
             }
 
-            if (files.backgroundImage && files.backgroundImage.length > 0) {
-                const backgroundImageUrl = await uploadFile(files.backgroundImage[0].buffer);
-                updateData.backgroundImage = backgroundImageUrl;
-            }
+            const imageUrls = await Promise.all(
+                files.image.map(file => uploadFile(file.buffer))
+            );
+
+            const backgroundImageUrl = files.backgroundImage
+                ? await uploadFile(files.backgroundImage[0].buffer)
+                : null;
+
+            const newProduct = new Product({
+                title,
+                subtitle,
+                other_info: JSON.parse(other_info),
+                category,
+                image: imageUrls,
+                backgroundImage: backgroundImageUrl,
+            });
+
+            const savedProduct = await newProduct.save();
+            res.status(201).json(savedProduct);
+        } catch (error) {
+            console.error('Error creating product:', error.message);
+            res.status(500).json({ message: 'Failed to create product', error: error.message });
         }
-
-        const updatedProduct = await Product.findByIdAndUpdate(id, updateData, {
-            new: true,
-            runValidators: true,
-        });
-
-        if (!updatedProduct) {
-            return res.status(404).json({ message: 'Product not found' });
-        }
-
-        res.status(200).json(updatedProduct);
-    } catch (error) {
-        console.error('Error updating product:', error.message);
-        res.status(500).json({ message: 'Failed to update product', error: error.message });
     }
-});
+);
+
+
+
+productRouter.put(
+    '/:id',
+    upload.fields([
+        { name: 'image', maxCount: 10 },
+        { name: 'backgroundImage', maxCount: 1 },
+    ]),
+    async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { title, subtitle, other_info, category } = req.body;
+            const files = req.files;
+
+            const existingProduct = await Product.findById(id);
+            if (!existingProduct) {
+                return res.status(404).json({ message: 'Product not found' });
+            }
+
+            let existingImages = existingProduct.image || [];
+            let uploadedImages = [];
+
+            if (files && files.image && files.image.length > 0) {
+                for (const file of files.image) {
+                    if (file.path && file.path.startsWith('http')) {
+                        if (!existingImages.includes(file.path)) {
+                            uploadedImages.push(file.path);
+                        }
+                    } else if (file.buffer) {
+                        const url = await uploadFile(file.buffer);
+                        if (url) {
+                            uploadedImages.push(url);
+                        }
+                    } else {
+                        console.warn('File structure not as expected:', file);
+                    }
+                }
+
+                existingImages = [...existingImages, ...uploadedImages];
+            }
+
+            let backgroundImage = existingProduct.backgroundImage || null;
+            if (files && files.backgroundImage && files.backgroundImage.length > 0) {
+                backgroundImage = await uploadFile(files.backgroundImage[0].buffer);
+            }
+
+            let updateData = {
+                title,
+                subtitle,
+                other_info: JSON.parse(other_info),
+                category,
+                image: existingImages,
+                backgroundImage,
+            };
+
+            const updatedProduct = await Product.findByIdAndUpdate(id, updateData, {
+                new: true,
+                runValidators: true,
+            });
+
+            if (!updatedProduct) {
+                return res.status(404).json({ message: 'Product not found' });
+            }
+
+            res.status(200).json(updatedProduct);
+        } catch (error) {
+            console.error('Error updating product:', error.message);
+            res.status(500).json({ message: 'Failed to update product', error: error.message });
+        }
+    }
+);
+
 
 
 productRouter.delete('/:id', async (req, res) => {
