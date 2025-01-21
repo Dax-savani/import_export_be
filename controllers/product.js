@@ -105,7 +105,9 @@ productRouter.put(
             let uploadedImages = [];
             if (files && files.image && files.image.length > 0) {
                 for (const file of files.image) {
-                    if (file.buffer) {
+                    if (file.path && file.path.startsWith('http')) {
+                        uploadedImages.push(file.path);
+                    } else if (file.buffer) {
                         const url = await uploadFile(file.buffer);
                         if (url) {
                             uploadedImages.push(url);
