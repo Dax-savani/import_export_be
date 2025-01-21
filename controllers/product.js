@@ -102,17 +102,10 @@ productRouter.put(
             if (!existingProduct) {
                 return res.status(404).json({ message: 'Product not found' });
             }
-
-            let existingImages = existingProduct.image || [];
             let uploadedImages = [];
-
             if (files && files.image && files.image.length > 0) {
                 for (const file of files.image) {
-                    if (file.path && file.path.startsWith('http')) {
-                        if (!existingImages.includes(file.path)) {
-                            uploadedImages.push(file.path);
-                        }
-                    } else if (file.buffer) {
+                    if (file.buffer) {
                         const url = await uploadFile(file.buffer);
                         if (url) {
                             uploadedImages.push(url);
@@ -121,21 +114,18 @@ productRouter.put(
                         console.warn('File structure not as expected:', file);
                     }
                 }
-
-                existingImages = [...existingImages, ...uploadedImages];
             }
-
+            const imagesToUpdate = uploadedImages.length > 0 ? uploadedImages : existingProduct.image;
             let backgroundImage = existingProduct.backgroundImage || null;
             if (files && files.backgroundImage && files.backgroundImage.length > 0) {
                 backgroundImage = await uploadFile(files.backgroundImage[0].buffer);
             }
-
-            let updateData = {
+            const updateData = {
                 title,
                 subtitle,
-                other_info: JSON.parse(other_info),
+                other_info: other_info ? JSON.parse(other_info) : existingProduct.other_info,
                 category,
-                image: existingImages,
+                image: imagesToUpdate,
                 backgroundImage,
             };
 
